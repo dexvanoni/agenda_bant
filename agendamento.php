@@ -43,6 +43,9 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
             padding: 1rem 0;
             margin-bottom: 2rem;
         }
+        .campo-somente-leitura {
+            background-color:rgb(165, 165, 165) !important;
+        }
     </style>
 </head>
 <body>
@@ -91,89 +94,109 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
     <!-- Modal de Agendamento -->
     <div class="modal fade" id="agendamentoModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Novo Agendamento</h5>
+                    <div>
+                        <h5 class="modal-title mb-0">Novo Agendamento</h5>
+                        <small class="text-muted">Preencha os dados abaixo para solicitar seu agendamento</small>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                        <strong>Data e Hora Selecionadas:</strong>
-                        <span id="dataHoraSelecionada"></span>
+                    <div class="alert alert-secondary py-2 mb-3">
+                        <strong>Data/Hora:</strong> <span id="dataHoraSelecionada"></span>
                     </div>
                     <form id="formAgendamento">
                         <input type="hidden" id="data_inicio" name="data_inicio">
                         <input type="hidden" id="data_fim" name="data_fim">
                         <input type="hidden" id="espaco_id" name="espaco_id">
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Data</label>
-                                <input type="date" class="form-control" id="data_agendamento" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Hora Início</label>
-                                <input type="time" class="form-control" id="hora_inicio" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Duração (horas)</label>
-                                <select class="form-control" id="duracao" required>
-                                    <?php 
-                                    $max_horas = $config['max_horas_consecutivas'];
-                                    for ($i = 1; $i <= $max_horas; $i++) {
-                                        echo "<option value='{$i}'>" . $i . " hora" . ($i > 1 ? 's' : '') . "</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
 
-                        <div class="row mb-3">
-                        <div class="col-md-6">
-                                <label class="form-label">Posto/Graduação</label>
-                                <input type="text" class="form-control" name="posto_graduacao" required>
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="mb-3">Dados do Evento</h6>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Data</label>
+                                                <input type="date" class="form-control" id="data_agendamento" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Hora Início</label>
+                                                <input type="time" class="form-control" id="hora_inicio" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Duração (horas)</label>
+                                                <select class="form-control" id="duracao" required>
+                                                    <?php 
+                                                    $max_horas = $config['max_horas_consecutivas'];
+                                                    for ($i = 1; $i <= $max_horas; $i++) {
+                                                        echo "<option value='{$i}'>" . $i . " hora" . ($i > 1 ? 's' : '') . "</option>";
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-8">
+                                                <label class="form-label">Nome do Evento</label>
+                                                <input type="text" class="form-control" id="nome_evento" name="nome_evento" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Participantes</label>
+                                                <input type="number" class="form-control" name="quantidade_participantes" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Observações/Links de Reunião</label>
+                                            <textarea class="form-control" name="observacoes" rows="3" required></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="form-label">Anexo (opcional - PNG, JPG, JPEG ou PDF, até 2MB)</label>
+                                            <input type="file" class="form-control" id="anexo" name="anexo" accept=".png,.jpg,.jpeg,.pdf">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Nome do Solicitante</label>
-                                <input type="text" class="form-control" name="nome_solicitante" required>
+                            <div class="col-lg-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="mb-3">Dados do Militar</h6>
+                                        <div class="mb-2">
+                                            <label class="form-label">Buscar Militar</label>
+                                            <input type="text" class="form-control" id="busca_militar" placeholder="Digite o nome ou posto do militar e clique no nome encontrado abaixo...">
+                                            <input type="hidden" id="militar_id" name="militar_id">
+                                            <div id="resultados_busca" class="list-group mt-2" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+                                        </div>
+                                        <small style="color: red;" class="text-muted">Caso necessário, o militar poderá atualizar as informações abaixo.</small>
+                                        <div class="row g-2 mt-1">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Posto/Graduação</label>
+                                                <input type="text" class="form-control campo-somente-leitura" name="posto_graduacao">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Nome do Solicitante</label>
+                                                <input type="text" class="form-control campo-somente-leitura" name="nome_solicitante">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Email</label>
+                                                <input type="email" class="form-control campo-somente-leitura" name="email_solicitante">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Setor</label>
+                                                <input type="text" class="form-control campo-somente-leitura" name="setor">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Ramal</label>
+                                                <input type="text" class="form-control campo-somente-leitura" name="ramal">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Setor</label>
-                                <input type="text" class="form-control" name="setor" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Ramal</label>
-                                <input type="text" class="form-control" name="ramal" required>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label class="form-label">Seu Email</label>
-                                <input type="email" class="form-control" name="email_solicitante" required>
-                                <small class="text-muted">Você receberá uma confirmação por email quando o status do agendamento for atualizado.</small>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Nome do Evento</label>
-                                <input type="text" class="form-control" id="nome_evento" name="nome_evento" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Quantidade de Participantes</label>
-                                <input type="number" class="form-control" name="quantidade_participantes" required>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Observações/Links de Reunião</label>
-                            <textarea class="form-control" name="observacoes" rows="3" required></textarea>
-                        </div>
+                        <small class="text-muted d-block mt-3">Você receberá uma confirmação por email quando o status do agendamento for atualizado.</small>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -287,6 +310,114 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
             document.getElementById('hora_inicio').addEventListener('change', atualizarDatas);
             document.getElementById('duracao').addEventListener('change', atualizarDatas);
 
+            // Função para buscar militares
+            let timeoutId;
+            const buscaMilitar = document.getElementById('busca_militar');
+            const resultadosBusca = document.getElementById('resultados_busca');
+
+            buscaMilitar.addEventListener('input', function() {
+                clearTimeout(timeoutId);
+                const busca = this.value.trim();
+
+                if (busca.length < 2) {
+                    resultadosBusca.style.display = 'none';
+                    return;
+                }
+
+                timeoutId = setTimeout(() => {
+                    fetch(`buscar_militares.php?busca=${encodeURIComponent(busca)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            resultadosBusca.innerHTML = '';
+                            
+                            if (data.length === 0) {
+                                resultadosBusca.style.display = 'none';
+                                return;
+                            }
+
+                            data.forEach(militar => {
+                                const item = document.createElement('a');
+                                item.href = '#';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.innerHTML = `${militar.posto_graduacao} ${militar.nome_guerra}`;
+                                
+                                item.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    selecionarMilitar(militar);
+                                });
+                                
+                                resultadosBusca.appendChild(item);
+                            });
+                            
+                            resultadosBusca.style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error('Erro ao buscar militares:', error);
+                        });
+                }, 300);
+            });
+
+            // Função para selecionar um militar
+            function selecionarMilitar(militar) {
+                document.getElementById('militar_id').value = militar.id;
+                document.getElementById('busca_militar').value = `${militar.posto_graduacao} ${militar.nome_guerra}`;
+                document.querySelector('input[name="posto_graduacao"]').value = militar.posto_graduacao;
+                document.querySelector('input[name="nome_solicitante"]').value = militar.nome_guerra;
+                document.querySelector('input[name="setor"]').value = militar.esquadrao_setor;
+                document.querySelector('input[name="ramal"]').value = militar.ramal;
+                document.querySelector('input[name="email_solicitante"]').value = militar.email_fab;
+                resultadosBusca.style.display = 'none';
+            }
+
+            // Adicionar listeners para atualizar dados do militar quando os campos forem alterados
+            const camposMilitar = [
+                { input: 'posto_graduacao', campo: 'posto_graduacao' },
+                { input: 'nome_solicitante', campo: 'nome_guerra' },
+                { input: 'setor', campo: 'esquadrao_setor' },
+                { input: 'ramal', campo: 'ramal' },
+                { input: 'email_solicitante', campo: 'email_fab' }
+            ];
+
+            camposMilitar.forEach(campo => {
+                document.querySelector(`input[name="${campo.input}"]`).addEventListener('change', async function() {
+                    const militarId = document.getElementById('militar_id').value;
+                    if (!militarId) return;
+
+                    const dados = {
+                        id: militarId,
+                        posto_graduacao: document.querySelector('input[name="posto_graduacao"]').value,
+                        nome_guerra: document.querySelector('input[name="nome_solicitante"]').value,
+                        esquadrao_setor: document.querySelector('input[name="setor"]').value,
+                        email_fab: document.querySelector('input[name="email_solicitante"]').value,
+                        ramal: document.querySelector('input[name="ramal"]').value
+                    };
+
+                    try {
+                        const response = await fetch('atualizar_militar.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(dados)
+                        });
+
+                        const result = await response.json();
+                        if (!result.success) {
+                            console.error('Erro ao atualizar dados do militar:', result.message);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao processar a requisição:', error);
+                    }
+                });
+            });
+
+            // Fechar resultados ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!buscaMilitar.contains(e.target) && !resultadosBusca.contains(e.target)) {
+                    resultadosBusca.style.display = 'none';
+                }
+            });
+
             // Salvar agendamento
             document.getElementById('btnSalvarAgendamento').addEventListener('click', function() {
                 // Validar data/hora
@@ -294,6 +425,21 @@ $config = $stmt->fetch(PDO::FETCH_ASSOC);
                 if (dataInicio < new Date()) {
                     alert('Não é possível agendar datas ou horários passados.');
                     return;
+                }
+
+                // Validar anexo (se presente)
+                const fileInput = document.getElementById('anexo');
+                if (fileInput && fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const allowedTypes = ['image/png', 'image/jpeg', 'application/pdf'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Tipo de arquivo inválido. Permitidos: PNG, JPG, JPEG ou PDF.');
+                        return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) { // 2MB
+                        alert('O arquivo deve ter no máximo 2MB.');
+                        return;
+                    }
                 }
 
                 const formData = new FormData(document.getElementById('formAgendamento'));

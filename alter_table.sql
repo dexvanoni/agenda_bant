@@ -1,0 +1,1 @@
+ALTER TABLE agendamentos MODIFY COLUMN categoria_evento VARCHAR(255) NULL; 

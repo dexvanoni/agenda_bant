@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS configuracoes (
     antecedencia_horas INT NOT NULL DEFAULT 24,
     max_horas_consecutivas INT NOT NULL DEFAULT 4,
     email_comunicacao VARCHAR(255) NOT NULL,
-    email_sindico_cine_navy VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -47,8 +46,8 @@ CREATE TABLE IF NOT EXISTS agendamentos (
 );
 
 -- Inserir configurações padrão
-INSERT INTO configuracoes (antecedencia_horas, max_horas_consecutivas, email_comunicacao, email_sindico_cine_navy)
-VALUES (24, 4, 'comunicacao@fab.mil.br', 'sindico.cinenavy@fab.mil.br');
+INSERT INTO configuracoes (antecedencia_horas, max_horas_consecutivas, email_comunicacao)
+VALUES (24, 4, 'comunicacao@fab.mil.br');
 
 -- Inserir usuário administrador
 CREATE TABLE IF NOT EXISTS usuarios (

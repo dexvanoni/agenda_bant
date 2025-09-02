@@ -141,12 +141,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
                 <div class="card mb-4">
                     <div class="card-body">
                         <h5 class="card-title">Informações do Evento</h5>
+                        <?php
+                        // Verificar se existe documento enviado para este agendamento
+                        $uploadDir = __DIR__ . '/../uploads/agendamentos';
+                        $arquivo_url = null;
+                        if (is_dir($uploadDir)) {
+                            $pattern = $uploadDir . DIRECTORY_SEPARATOR . 'agendamento_' . $agendamento_id . '_*';
+                            $files = glob($pattern);
+                            if ($files && count($files) > 0) {
+                                $filePath = $files[0];
+                                $filename = basename($filePath);
+                                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                                $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\'); // e.g. /admin
+                                $rootPath = rtrim(dirname($basePath), '/\\'); // subir um nível para raiz do app
+                                $rootPrefix = ($rootPath === '.' || $rootPath === '') ? '' : $rootPath;
+                                $arquivo_url = $protocol . '://' . $host . $rootPrefix . '/uploads/agendamentos/' . rawurlencode($filename);
+                            }
+                        }
+                        ?>
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Evento:</strong> <?php echo htmlspecialchars($agendamento['nome_evento']); ?></p>
                                 <p><strong>Espaço:</strong> <?php echo htmlspecialchars($agendamento['espaco_nome']); ?></p>
                                 <p><strong>Data Início:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_inicio'])); ?></p>
                                 <p><strong>Data Fim:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_fim'])); ?></p>
+                                <?php if ($arquivo_url): ?>
+                                <p class="mt-3">
+                                    <a class="btn btn-outline-primary" href="<?php echo htmlspecialchars($arquivo_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+                                        <i class="fa-solid fa-file-arrow-down me-1"></i> Baixar documento
+                                    </a>
+                                </p>
+                                <?php endif; ?>
                             </div>
                             <div class="col-md-6">
                                 <p><strong>Solicitante:</strong> <?php echo htmlspecialchars($agendamento['posto_graduacao'] . ' ' . $agendamento['nome_solicitante']); ?></p>

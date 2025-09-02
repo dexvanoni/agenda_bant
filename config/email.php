@@ -4,7 +4,7 @@ use PHPMailer\PHPMailer\Exception;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-function enviarEmail($destinatario, $assunto, $mensagem) {
+function enviarEmail($destinatario, $assunto, $mensagem, $anexos = []) {
     $mail = new PHPMailer(true);
 
     try {
@@ -26,6 +26,20 @@ function enviarEmail($destinatario, $assunto, $mensagem) {
         $mail->isHTML(true);
         $mail->Subject = $assunto;
         $mail->Body = $mensagem;
+
+        // Anexos opcionais
+        if (!empty($anexos) && is_array($anexos)) {
+            foreach ($anexos as $anexo) {
+                if (!isset($anexo['path'])) {
+                    continue;
+                }
+                $path = $anexo['path'];
+                $name = isset($anexo['name']) ? $anexo['name'] : '';
+                if (is_readable($path)) {
+                    $mail->addAttachment($path, $name);
+                }
+            }
+        }
 
         $mail->send();
         return true;

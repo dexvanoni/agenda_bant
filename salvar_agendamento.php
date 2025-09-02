@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 try {
     // Validar dados
     $required_fields = [
-        'espaco_id', 'nome_solicitante', 'posto_graduacao', 'setor', 'ramal',
+        'militar_id', 'espaco_id', 'nome_solicitante', 'posto_graduacao', 'setor', 'ramal',
         'email_solicitante', 'nome_evento', 'quantidade_participantes',
         'data_inicio', 'data_fim', 'observacoes'
     ];
@@ -96,13 +96,14 @@ try {
     // Inserir agendamento
     $stmt = $conn->prepare("
         INSERT INTO agendamentos (
-            espaco_id, nome_solicitante, posto_graduacao, setor, ramal,
+            militar_id, espaco_id, nome_solicitante, posto_graduacao, setor, ramal,
             email_solicitante, nome_evento, quantidade_participantes,
             observacoes, data_inicio, data_fim
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->execute([
+        $_POST['militar_id'],
         $_POST['espaco_id'],
         $_POST['nome_solicitante'],
         $_POST['posto_graduacao'],
@@ -140,10 +141,71 @@ try {
         <p>Acesse o sistema para aprovar ou cancelar este agendamento.</p>
     ";
 
+    // Se houver arquivo enviado, salvar no servidor e adicionar link no email (sem anexos)
+    if (isset($_FILES['anexo']) && isset($_FILES['anexo']['error']) && $_FILES['anexo']['error'] !== UPLOAD_ERR_NO_FILE) {
+        if ($_FILES['anexo']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Erro no upload do arquivo.');
+        }
+        $tmpPath = $_FILES['anexo']['tmp_name'];
+        $originalName = $_FILES['anexo']['name'];
+        $sizeBytes = $_FILES['anexo']['size'];
+
+        if ($sizeBytes > 2 * 1024 * 1024) {
+            throw new Exception('O arquivo deve ter no máximo 2MB.');
+        }
+
+        $allowedMime = ['image/png', 'image/jpeg', 'application/pdf'];
+        $detectedType = null;
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $detectedType = finfo_file($finfo, $tmpPath);
+                finfo_close($finfo);
+            }
+        }
+        if ($detectedType === null && function_exists('mime_content_type')) {
+            $detectedType = mime_content_type($tmpPath);
+        }
+        if ($detectedType === null) {
+            $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            if (in_array($ext, ['png'])) $detectedType = 'image/png';
+            if (in_array($ext, ['jpg','jpeg'])) $detectedType = 'image/jpeg';
+            if ($ext === 'pdf') $detectedType = 'application/pdf';
+        }
+        if ($detectedType === null || !in_array($detectedType, $allowedMime, true)) {
+            throw new Exception('Tipo de arquivo inválido. Permitidos: PNG, JPG, JPEG ou PDF.');
+        }
+
+        $extMap = [
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'application/pdf' => 'pdf'
+        ];
+        $safeExt = isset($extMap[$detectedType]) ? $extMap[$detectedType] : strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $uploadDir = __DIR__ . '/uploads/agendamentos';
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+                throw new Exception('Não foi possível criar o diretório de upload.');
+            }
+        }
+        $filename = 'agendamento_' . $agendamento_id . '_' . date('Ymd_His') . '.' . $safeExt;
+        $destPath = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+        if (!move_uploaded_file($tmpPath, $destPath)) {
+            throw new Exception('Falha ao salvar o arquivo enviado.');
+        }
+        // Montar URL pública
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+        $publicPath = ($basePath === '' || $basePath === '.') ? '' : $basePath;
+        $fileUrl = $protocol . '://' . $host . $publicPath . '/uploads/agendamentos/' . rawurlencode($filename);
+        $mensagem .= "<p><strong>Documento enviado:</strong> <a href='" . htmlspecialchars($fileUrl, ENT_QUOTES, 'UTF-8') . "' target='_blank' rel='noopener noreferrer'>Clique para visualizar</a></p>";
+    }
+
     // Enviar email para a comunicação social
     enviarEmail($config['email_comunicacao'], $assunto, $mensagem);
 
-    // Enviar email adicional para a Sala de Videoconferência
+    // Enviar email adicional para a Sala de Videoconferência (sem anexos; com link, se houver)
     if ($espaco['nome'] === 'Sala de Videoconferência') {
         enviarEmail('etic.bant@fab.mil.br', $assunto, $mensagem);
     }

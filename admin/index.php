@@ -21,11 +21,17 @@ $espacos_ativos = $stmt->fetchColumn();
 $stmt = $conn->query("
     SELECT a.*, e.nome as espaco_nome 
     FROM agendamentos a 
-    JOIN espacos e ON a.espaco_id = e.id 
-    ORDER BY a.created_at DESC 
-    LIMIT 5
+    JOIN espacos e ON a.espaco_id = e.id
+    WHERE a.data_inicio >= CURRENT_DATE()
+    ORDER BY 
+        CASE 
+            WHEN a.status = 'pendente' THEN 1
+            ELSE 2
+        END,
+	DATE(a.data_inicio) ASC,
+	TIME(a.data_inicio) ASC
 ");
-$ultimos_agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -85,6 +91,9 @@ $ultimos_agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a href="relatorios.php" class="btn btn-primary">
                         <i class="fas fa-chart-bar"></i> Relatórios
                     </a>
+                    <a href="militares.php" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Militares
+                    </a>
                 </div>
             </div>
         </div>
@@ -119,14 +128,27 @@ $ultimos_agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Últimos Agendamentos -->
         <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Últimos Agendamentos</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Agendamentos</h5>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success btn-sm" id="btnAprovarSelecionados">
+                        <i class="fas fa-check"></i> Aprovar Selecionados
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="btnCancelarSelecionados">
+                        <i class="fas fa-times"></i> Cancelar Selecionados
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                    <table class="table table-striped table-hover">
+                        <thead class="sticky-top bg-white">
                             <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selecionarTodos">
+                                    </div>
+                                </th>
                                 <th>Evento</th>
                                 <th>Espaço</th>
                                 <th>Solicitante</th>
@@ -136,8 +158,15 @@ $ultimos_agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($ultimos_agendamentos as $agendamento): ?>
+                            <?php foreach ($agendamentos as $agendamento): ?>
                             <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input agendamento-checkbox" type="checkbox" 
+                                               value="<?php echo $agendamento['id']; ?>"
+                                               data-status="<?php echo $agendamento['status']; ?>">
+                                    </div>
+                                </td>
                                 <td><?php echo htmlspecialchars($agendamento['nome_evento']); ?></td>
                                 <td><?php echo htmlspecialchars($agendamento['espaco_nome']); ?></td>
                                 <td><?php echo htmlspecialchars($agendamento['nome_solicitante']); ?></td>
@@ -165,6 +194,25 @@ $ultimos_agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </main>
 
+    <!-- Progress Bar Modal -->
+    <div class="modal fade" id="progressModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <h5 class="mb-3">Processando agendamentos...</h5>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-light mt-5 py-3">
         <div class="container text-center">
@@ -174,5 +222,74 @@ $ultimos_agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selecionarTodos = document.getElementById('selecionarTodos');
+            const checkboxes = document.querySelectorAll('.agendamento-checkbox');
+            const btnAprovarSelecionados = document.getElementById('btnAprovarSelecionados');
+            const btnCancelarSelecionados = document.getElementById('btnCancelarSelecionados');
+            const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+
+            // Função para marcar/desmarcar todos
+            selecionarTodos.addEventListener('change', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+
+            // Função para atualizar status dos agendamentos selecionados
+            async function atualizarStatusAgendamentos(status) {
+                const selecionados = Array.from(checkboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+
+                if (selecionados.length === 0) {
+                    alert('Selecione pelo menos um agendamento!');
+                    return;
+                }
+
+                if (!confirm(`Deseja realmente ${status === 'aprovado' ? 'aprovar' : 'cancelar'} os agendamentos selecionados?`)) {
+                    return;
+                }
+
+                try {
+                    // Mostrar modal de progresso
+                    progressModal.show();
+
+                    const response = await fetch('atualizar_status.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ids: selecionados,
+                            status: status
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    // Esconder modal de progresso
+                    progressModal.hide();
+                    
+                    if (data.success) {
+                        alert('Status atualizado com sucesso!');
+                        location.reload();
+                    } else {
+                        alert('Erro ao atualizar status: ' + data.message);
+                    }
+                } catch (error) {
+                    // Esconder modal de progresso em caso de erro
+                    progressModal.hide();
+                    alert('Erro ao processar a requisição: ' + error.message);
+                }
+            }
+
+            // Eventos dos botões
+            btnAprovarSelecionados.addEventListener('click', () => atualizarStatusAgendamentos('aprovado'));
+            btnCancelarSelecionados.addEventListener('click', () => atualizarStatusAgendamentos('cancelado'));
+        });
+    </script>
 </body>
 </html> 
