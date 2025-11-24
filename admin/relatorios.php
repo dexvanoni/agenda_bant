@@ -138,8 +138,14 @@ $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <td><?php echo htmlspecialchars($agendamento['nome_evento']); ?></td>
                                 <td><?php echo htmlspecialchars($agendamento['espaco_nome']); ?></td>
                                 <td><?php echo htmlspecialchars($agendamento['nome_solicitante']); ?></td>
-                                <td><?php echo date('d/m/Y H:i', strtotime($agendamento['data_inicio'])); ?></td>
-                                <td><?php echo date('d/m/Y H:i', strtotime($agendamento['data_fim'])); ?></td>
+                                <td><?php 
+                                    $data_inicio = new DateTime($agendamento['data_inicio'], new DateTimeZone('America/Sao_Paulo'));
+                                    echo $data_inicio->format('d/m/Y H:i');
+                                ?></td>
+                                <td><?php 
+                                    $data_fim = new DateTime($agendamento['data_fim'], new DateTimeZone('America/Sao_Paulo'));
+                                    echo $data_fim->format('d/m/Y H:i');
+                                ?></td>
                                 <td>
                                     <span class="badge bg-<?php 
                                         echo $agendamento['status'] === 'aprovado' ? 'success' : 

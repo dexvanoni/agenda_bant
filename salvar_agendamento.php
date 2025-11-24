@@ -29,14 +29,19 @@ try {
         throw new Exception("Email inválido");
     }
 
-    // Converter datas para o formato MySQL, considerando o fuso horário
+    // Converter datas para o formato MySQL
+    // As datas vêm do JavaScript no formato ISO (pode estar em UTC ou com timezone)
+    // Criar DateTime e converter para America/Sao_Paulo
+    $timezone = new DateTimeZone('America/Sao_Paulo');
     $data_inicio = new DateTime($_POST['data_inicio']);
     $data_fim = new DateTime($_POST['data_fim']);
     
-    // Ajustar para o fuso horário local (UTC-3)
-    $data_inicio->setTimezone(new DateTimeZone('America/Sao_Paulo'));
-    $data_fim->setTimezone(new DateTimeZone('America/Sao_Paulo'));
+    // Converter para o timezone local (America/Sao_Paulo)
+    $data_inicio->setTimezone($timezone);
+    $data_fim->setTimezone($timezone);
     
+    // Formatar para MySQL (sem timezone, apenas data/hora)
+    // O banco armazena a data/hora como está, assumindo que está em America/Sao_Paulo
     $data_inicio_mysql = $data_inicio->format('Y-m-d H:i:s');
     $data_fim_mysql = $data_fim->format('Y-m-d H:i:s');
 

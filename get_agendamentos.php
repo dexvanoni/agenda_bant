@@ -29,8 +29,13 @@ try {
     
     // Formatar datas para o FullCalendar
     foreach ($agendamentos as &$agendamento) {
-        $agendamento['start'] = date('c', strtotime($agendamento['start']));
-        $agendamento['end'] = date('c', strtotime($agendamento['end']));
+        // Criar DateTime assumindo que a data do banco está em America/Sao_Paulo
+        $start = new DateTime($agendamento['start'], new DateTimeZone('America/Sao_Paulo'));
+        $end = new DateTime($agendamento['end'], new DateTimeZone('America/Sao_Paulo'));
+        
+        // Converter para formato ISO 8601 mantendo o timezone
+        $agendamento['start'] = $start->format('c');
+        $agendamento['end'] = $end->format('c');
         
         // Definir cor baseada no status
         switch ($agendamento['status']) {

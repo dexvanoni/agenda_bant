@@ -62,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
             <p>O status do seu agendamento foi {$status_texto[$_POST['status']]}.</p>
             <p><strong>Evento:</strong> {$agendamento_atualizado['nome_evento']}</p>
             <p><strong>Espaço:</strong> {$agendamento_atualizado['nome_espaco']}</p>
-            <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento_atualizado['data_inicio'])) . "</p>
-            <p><strong>Horário:</strong> " . date('H:i', strtotime($agendamento_atualizado['data_inicio'])) . " às " . date('H:i', strtotime($agendamento_atualizado['data_fim'])) . "</p>
+            <p><strong>Data:</strong> " . (new DateTime($agendamento_atualizado['data_inicio'], new DateTimeZone('America/Sao_Paulo')))->format('d/m/Y') . "</p>
+            <p><strong>Horário:</strong> " . (new DateTime($agendamento_atualizado['data_inicio'], new DateTimeZone('America/Sao_Paulo')))->format('H:i') . " às " . (new DateTime($agendamento_atualizado['data_fim'], new DateTimeZone('America/Sao_Paulo')))->format('H:i') . "</p>
         ";
 
         if ($_POST['status'] === 'cancelado') {
@@ -164,8 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
                             <div class="col-md-6">
                                 <p><strong>Evento:</strong> <?php echo htmlspecialchars($agendamento['nome_evento']); ?></p>
                                 <p><strong>Espaço:</strong> <?php echo htmlspecialchars($agendamento['espaco_nome']); ?></p>
-                                <p><strong>Data Início:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_inicio'])); ?></p>
-                                <p><strong>Data Fim:</strong> <?php echo date('d/m/Y H:i', strtotime($agendamento['data_fim'])); ?></p>
+                                <p><strong>Data Início:</strong> <?php 
+                                    $data_inicio = new DateTime($agendamento['data_inicio'], new DateTimeZone('America/Sao_Paulo'));
+                                    echo $data_inicio->format('d/m/Y H:i');
+                                ?></p>
+                                <p><strong>Data Fim:</strong> <?php 
+                                    $data_fim = new DateTime($agendamento['data_fim'], new DateTimeZone('America/Sao_Paulo'));
+                                    echo $data_fim->format('d/m/Y H:i');
+                                ?></p>
                                 <?php if ($arquivo_url): ?>
                                 <p class="mt-3">
                                     <a class="btn btn-outline-primary" href="<?php echo htmlspecialchars($arquivo_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">

@@ -64,9 +64,9 @@ try {
             <p>O status do seu agendamento foi atualizado.</p>
             <p><strong>Evento:</strong> {$agendamento['nome_evento']}</p>
             <p><strong>Espaço:</strong> {$agendamento['espaco_nome']}</p>
-            <p><strong>Data:</strong> " . date('d/m/Y', strtotime($agendamento['data_inicio'])) . "</p>
-            <p><strong>Horário:</strong> " . date('H:i', strtotime($agendamento['data_inicio'])) . " às " . 
-            date('H:i', strtotime($agendamento['data_fim'])) . "</p>
+            <p><strong>Data:</strong> " . (new DateTime($agendamento['data_inicio'], new DateTimeZone('America/Sao_Paulo')))->format('d/m/Y') . "</p>
+            <p><strong>Horário:</strong> " . (new DateTime($agendamento['data_inicio'], new DateTimeZone('America/Sao_Paulo')))->format('H:i') . " às " . 
+            (new DateTime($agendamento['data_fim'], new DateTimeZone('America/Sao_Paulo')))->format('H:i') . "</p>
             <p><strong>Novo Status:</strong> " . ucfirst($status) . "</p>
         ";
 

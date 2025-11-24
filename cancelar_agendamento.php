@@ -43,10 +43,10 @@ try {
     $config = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Formatar data e hora
-    $data_inicio = new DateTime($agendamento['data_inicio']);
-    $data_fim = new DateTime($agendamento['data_fim']);
-    $data_inicio->setTimezone(new DateTimeZone('America/Sao_Paulo'));
-    $data_fim->setTimezone(new DateTimeZone('America/Sao_Paulo'));
+    // Assumir que a data do banco está em America/Sao_Paulo
+    $timezone = new DateTimeZone('America/Sao_Paulo');
+    $data_inicio = new DateTime($agendamento['data_inicio'], $timezone);
+    $data_fim = new DateTime($agendamento['data_fim'], $timezone);
 
     // Enviar email para a comunicação social
     $assunto = "Agendamento Cancelado - Sistema BANT";

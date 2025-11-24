@@ -108,7 +108,8 @@ foreach ($espacos as $espaco) {
                                                     <br>
                                                     <small>
                                                         <?php 
-                                                        $data = new DateTime($agendamento['data_inicio']);
+                                                        // Assumir que a data do banco está em America/Sao_Paulo
+                                                        $data = new DateTime($agendamento['data_inicio'], new DateTimeZone('America/Sao_Paulo'));
                                                         echo $data->format('d/m/Y H:i');
                                                         ?>
                                                     </small>
