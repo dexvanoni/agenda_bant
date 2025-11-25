@@ -4,21 +4,6 @@ require_once 'config/database.php';
 // Buscar espaços ativos
 $stmt = $conn->query("SELECT * FROM espacos WHERE status = 'ativo' ORDER BY nome");
 $espacos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Buscar últimos agendamentos para cada espaço
-$ultimos_agendamentos = [];
-foreach ($espacos as $espaco) {
-    $stmt = $conn->prepare("
-        SELECT nome_evento, data_inicio, status 
-        FROM agendamentos 
-        WHERE espaco_id = ? 
-        AND status != 'cancelado'
-        ORDER BY data_inicio DESC 
-        LIMIT 5
-    ");
-    $stmt->execute([$espaco['id']]);
-    $ultimos_agendamentos[$espaco['id']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
 ?>
 
 <!DOCTYPE html>
@@ -38,22 +23,67 @@ foreach ($espacos as $espaco) {
             padding: 1rem 0;
             margin-bottom: 2rem;
         }
-        .card {
+        .espaco-card {
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: 100%;
+        }
+        .espaco-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .espaco-card .card-body {
+            padding: 2rem;
+        }
+        .espaco-card .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a237e;
+            margin-bottom: 1rem;
+        }
+        .espaco-card .card-text {
+            color: #666;
+            line-height: 1.6;
             margin-bottom: 1.5rem;
-            transition: transform 0.2s;
         }
-        .card:hover {
-            transform: translateY(-5px);
+        .espaco-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #555;
         }
-        .ultimos-agendamentos {
-            margin-top: 1rem;
-            font-size: 0.9rem;
+        .espaco-info i {
+            color: #1a237e;
+            width: 20px;
         }
-        .ultimos-agendamentos .list-group-item {
-            padding: 0.5rem 1rem;
+        .btn-agendar {
+            background-color: #1a237e;
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        .status-badge {
-            font-size: 0.8rem;
+        .btn-agendar:hover {
+            background-color: #283593;
+            transform: scale(1.05);
+        }
+        .intro-section {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            border-radius: 10px;
+        }
+        .intro-section h2 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .intro-section p {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -75,63 +105,37 @@ foreach ($espacos as $espaco) {
 
     <!-- Conteúdo Principal -->
     <main class="container">
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#meusAgendamentosModal">
+        <!-- Seção de Introdução -->
+        <div class="intro-section text-center">
+            <div class="container">
+                <h2>Auditórios Disponíveis</h2>
+                <p>Selecione um dos auditórios abaixo para realizar seu agendamento</p>
+                <button type="button" class="btn btn-light mt-3" data-bs-toggle="modal" data-bs-target="#meusAgendamentosModal">
                     <i class="fas fa-calendar-check"></i> Meus Agendamentos
                 </button>
             </div>
         </div>
+
+        <!-- Grid de Auditórios -->
         <div class="row">
             <?php foreach ($espacos as $espaco): ?>
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100">
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card espaco-card">
                     <div class="card-body">
-                        <h5 class="card-title"><?php echo htmlspecialchars($espaco['nome']); ?></h5>
+                        <h5 class="card-title">
+                            <i class="fas fa-building me-2"></i>
+                            <?php echo htmlspecialchars($espaco['nome']); ?>
+                        </h5>
                         <p class="card-text"><?php echo htmlspecialchars($espaco['descricao']); ?></p>
-                        <p class="card-text">
-                            <small class="text-muted">
-                                <i class="fas fa-users"></i> Capacidade: <?php echo $espaco['capacidade']; ?> pessoas
-                            </small>
-                        </p>
                         
-                        <!-- Últimos Agendamentos -->
-                        <div class="ultimos-agendamentos">
-                            <h6 class="mb-2">Últimos Agendamentos:</h6>
-                            <?php if (!empty($ultimos_agendamentos[$espaco['id']])): ?>
-                                <div class="list-group">
-                                    <?php foreach ($ultimos_agendamentos[$espaco['id']] as $agendamento): ?>
-                                        <div class="list-group-item">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <strong><?php echo htmlspecialchars($agendamento['nome_evento']); ?></strong>
-                                                    <br>
-                                                    <small>
-                                                        <?php 
-                                                        // Assumir que a data do banco está em America/Sao_Paulo
-                                                        $data = new DateTime($agendamento['data_inicio'], new DateTimeZone('America/Sao_Paulo'));
-                                                        echo $data->format('d/m/Y H:i');
-                                                        ?>
-                                                    </small>
-                                                </div>
-                                                <span class="badge <?php 
-                                                    echo $agendamento['status'] === 'aprovado' ? 'bg-success' : 
-                                                        ($agendamento['status'] === 'pendente' ? 'bg-warning' : 'bg-secondary');
-                                                ?> status-badge">
-                                                    <?php echo ucfirst($agendamento['status']); ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php else: ?>
-                                <p class="text-muted mb-0">Nenhum agendamento recente</p>
-                            <?php endif; ?>
+                        <div class="espaco-info">
+                            <i class="fas fa-users"></i>
+                            <span><strong>Capacidade:</strong> <?php echo $espaco['capacidade']; ?> pessoas</span>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <a href="agendamento.php?espaco=<?php echo $espaco['id']; ?>" class="btn btn-primary w-100">
-                            Agendar
+                    <div class="card-footer bg-transparent border-0 pb-3">
+                        <a href="agendamento.php?espaco=<?php echo $espaco['id']; ?>" class="btn btn-primary btn-agendar w-100">
+                            <i class="fas fa-calendar-plus me-2"></i>Agendar Este Espaço
                         </a>
                     </div>
                 </div>
@@ -143,7 +147,7 @@ foreach ($espacos as $espaco) {
     <!-- Footer -->
     <footer class="bg-light mt-5 py-3">
         <div class="container text-center">
-            <p class="mb-0">&copy; <?php echo date('Y'); ?> Base Aérea de Natal. ETIC | Desenvolvimento.</p>
+            <p class="mb-0">&copy; <?php echo date('Y'); ?> Base Aérea de Natal. ETIC | Desenvolvido por Sgt Vanoni.</p>
         </div>
     </footer>
 
