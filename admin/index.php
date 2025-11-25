@@ -21,26 +21,16 @@ $espacos_ativos = $stmt->fetchColumn();
 $stmt = $conn->query("
     SELECT a.*, e.nome as espaco_nome 
     FROM agendamentos a 
-<<<<<<< HEAD
     JOIN espacos e ON a.espaco_id = e.id
     WHERE a.data_inicio >= CURRENT_DATE()
-    ORDER BY 
-        CASE 
-            WHEN a.status = 'pendente' THEN 1
-            ELSE 2
-        END,
-	DATE(a.data_inicio) ASC,
-	TIME(a.data_inicio) ASC
-=======
-    JOIN espacos e ON a.espaco_id = e.id 
     ORDER BY 
         CASE 
             WHEN a.status = 'pendente' THEN 1
             WHEN a.status = 'aprovado' THEN 2
             ELSE 3
         END,
-        a.created_at DESC
->>>>>>> b1425d213fcef24a778d182eddded222249caa28
+        DATE(a.data_inicio) ASC,
+        TIME(a.data_inicio) ASC
 ");
 $agendamentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
